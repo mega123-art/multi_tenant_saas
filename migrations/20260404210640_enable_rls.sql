@@ -1,9 +1,13 @@
 -- Add migration script here
 -- Enable RLS on all tenant tables
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users FORCE ROW LEVEL SECURITY;
 ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE projects FORCE ROW LEVEL SECURITY;
 ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tasks FORCE ROW LEVEL SECURITY;
 ALTER TABLE jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE jobs FORCE ROW LEVEL SECURITY;
 
 -- Create RLS policies — only show rows matching current tenant
 CREATE POLICY tenant_isolation_users ON users
