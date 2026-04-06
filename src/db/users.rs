@@ -1,5 +1,6 @@
 use sqlx::PgPool;
 use uuid::Uuid;
+use futures_util::FutureExt;
 
 use crate::models::User;
 use crate::errors::ApiError;
@@ -31,7 +32,7 @@ pub async fn create_user(
         .await?;
 
         Ok(user)
-    })
+    }.boxed())
     .await?;
 
     Ok(user)
@@ -58,7 +59,7 @@ pub async fn list_users(
         .await?;
 
         Ok(users)
-    })
+    }.boxed())
     .await?;
 
     Ok(users)
@@ -90,7 +91,7 @@ pub async fn get_user(
             Some(u) => Ok(u),
             None => Err(ApiError::NotFound),
         }
-    })
+    }.boxed())
     .await?;
 
     Ok(user)

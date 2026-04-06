@@ -1,5 +1,4 @@
-use sqlx::{PgPool, PgConnection};
-use uuid::Uuid;
+use sqlx::PgPool;
 
 use crate::models::Tenant;
 use crate::errors::ApiError;
@@ -8,6 +7,7 @@ use crate::errors::ApiError;
 //CREATE TENANT 
 
 
+#[allow(unused)]
 pub async fn create_tenant(
     pool: &PgPool,
     name: String,

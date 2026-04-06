@@ -3,20 +3,22 @@ use uuid::Uuid;
 
 use crate::errors::ApiError;
 
-pub async fn with_tenant<F, Fut, T>(
+use futures_util::future::BoxFuture;
+
+pub async fn with_tenant<F, T>(
     pool: &PgPool,
     tenant_id: Uuid,
     f: F,
 ) -> Result<T, ApiError>
 where
-    F: FnOnce(&mut Transaction<'_, Postgres>) -> Fut,
-    Fut: std::future::Future<Output = Result<T, ApiError>>,
+    F: for<'a> FnOnce(&'a mut Transaction<'_, Postgres>) -> BoxFuture<'a, Result<T, ApiError>>,
+    T: Send,
 {
     //start transaction
     let mut tx = pool.begin().await?;
 
     //set tenant (scoped to transaction)
-    sqlx::query("SET LOCAL app.current_tenant = $1")
+    sqlx::query("SELECT set_config('app.current_tenant', $1, true)")
         .bind(tenant_id.to_string())
         .execute(&mut *tx)
         .await?;

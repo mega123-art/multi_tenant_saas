@@ -13,7 +13,7 @@ pub struct Tenant {
     pub id: Uuid,
     pub name: String,
     pub slug: String,
-    pub created_at: DateTime<Utc>,
+    pub created_at: Option<DateTime<Utc>>,
 }
 
 //USER 
@@ -25,11 +25,12 @@ pub struct User {
     pub name: String,
     pub email: String,
     pub role: String,
-    pub created_at: DateTime<Utc>,
+    pub created_at: Option<DateTime<Utc>>,
 }
 
 //PROJECT
 
+#[allow(dead_code)]
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct Project {
     pub id: Uuid,
@@ -37,13 +38,14 @@ pub struct Project {
     pub name: String,
     pub description: Option<String>,
     pub status: String,
-    pub created_at: DateTime<Utc>,
+    pub created_at: Option<DateTime<Utc>>,
 }
 
 //
 // ===== TASK =====
 //
 
+#[allow(dead_code)]
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct Task {
     pub id: Uuid,
@@ -56,14 +58,15 @@ pub struct Task {
     pub priority: String,
     pub metadata: Value,
     pub version: i32,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
+    pub created_at: Option<DateTime<Utc>>,
+    pub updated_at: Option<DateTime<Utc>>,
 }
 
 
 //JOB 
 
 
+#[allow(dead_code)]
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct Job {
     pub id: Uuid,
@@ -74,6 +77,6 @@ pub struct Job {
     pub attempts: i32,
     pub max_attempts: i32,
     pub error_message: Option<String>,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
+    pub created_at: Option<DateTime<Utc>>,
+    pub updated_at: Option<DateTime<Utc>>,
 }
