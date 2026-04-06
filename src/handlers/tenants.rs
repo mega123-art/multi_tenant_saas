@@ -27,7 +27,7 @@ pub struct CreateTenantRequest {
 //
 
 pub async fn create_tenant_handler(
-    State(pool): State<PgPool>,
+    State((pool, _)): State<(PgPool, redis::Client)>,
     Json(payload): Json<CreateTenantRequest>,
 ) -> Result<Json<crate::models::Tenant>, ApiError> {
     payload
@@ -40,7 +40,7 @@ pub async fn create_tenant_handler(
 }
 
 pub async fn get_tenant_handler(
-    State(pool): State<PgPool>,
+    State((pool, _)): State<(PgPool, redis::Client)>,
     Path(slug): Path<String>,
 ) -> Result<Json<crate::models::Tenant>, ApiError> {
     let tenant = get_tenant_by_slug(&pool, &slug).await?;

@@ -26,7 +26,7 @@ pub struct CreateProjectRequest {
 //HANDLERS
 
 pub async fn create_project_handler(
-    State(pool): State<PgPool>,
+    State((pool, _)): State<(PgPool, redis::Client)>,
     Extension(ctx): Extension<TenantContext>,
     Json(payload): Json<CreateProjectRequest>,
 ) -> Result<Json<crate::models::Project>, ApiError> {
@@ -43,7 +43,7 @@ pub async fn create_project_handler(
 }
 
 pub async fn list_projects_handler(
-    State(pool): State<PgPool>,
+    State((pool, _)): State<(PgPool, redis::Client)>,
     Extension(ctx): Extension<TenantContext>,
 ) -> Result<Json<Vec<crate::models::Project>>, ApiError> {
     let projects = list_projects(&pool, ctx.tenant_id).await?;
@@ -52,7 +52,7 @@ pub async fn list_projects_handler(
 }
 
 pub async fn get_project_handler(
-    State(pool): State<PgPool>,
+    State((pool, _)): State<(PgPool, redis::Client)>,
     Extension(ctx): Extension<TenantContext>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<crate::models::Project>, ApiError> {
@@ -62,7 +62,7 @@ pub async fn get_project_handler(
 }
 
 pub async fn delete_project_handler(
-    State(pool): State<PgPool>,
+    State((pool, _)): State<(PgPool, redis::Client)>,
     Extension(ctx): Extension<TenantContext>,
     Path(id): Path<Uuid>,
 ) -> Result<(), ApiError> {

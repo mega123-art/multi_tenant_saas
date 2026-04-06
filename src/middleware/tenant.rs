@@ -16,7 +16,7 @@ pub struct TenantContext {
 }
 
 pub async fn tenant_middleware(
-    State(pool): State<PgPool>,
+    State((pool, _)): State<(PgPool, redis::Client)>,
     mut req: Request,
     next: Next,
 ) -> Result<Response, ApiError> {

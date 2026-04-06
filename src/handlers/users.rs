@@ -27,7 +27,7 @@ pub struct CreateUserRequest {
 //HANDLERS
 
 pub async fn create_user_handler(
-    State(pool): State<PgPool>,
+    State((pool, _)): State<(PgPool, redis::Client)>,
     Extension(ctx): Extension<TenantContext>,
     Json(payload): Json<CreateUserRequest>,
 ) -> Result<Json<crate::models::User>, ApiError> {
@@ -41,7 +41,7 @@ pub async fn create_user_handler(
 }
 
 pub async fn list_users_handler(
-    State(pool): State<PgPool>,
+    State((pool, _)): State<(PgPool, redis::Client)>,
     Extension(ctx): Extension<TenantContext>,
 ) -> Result<Json<Vec<crate::models::User>>, ApiError> {
     let users = list_users(&pool, ctx.tenant_id).await?;
@@ -50,7 +50,7 @@ pub async fn list_users_handler(
 }
 
 pub async fn get_user_handler(
-    State(pool): State<PgPool>,
+    State((pool, _)): State<(PgPool, redis::Client)>,
     Extension(ctx): Extension<TenantContext>,
     Path(user_id): Path<Uuid>,
 ) -> Result<Json<crate::models::User>, ApiError> {

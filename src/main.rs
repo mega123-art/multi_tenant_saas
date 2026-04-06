@@ -30,6 +30,10 @@ async fn main() {
         .await
         .expect("Failed to connect to DB");
 
+    //Initialize Redis
+    let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL must be set");
+    let redis_client = redis::Client::open(redis_url).expect("Failed to connect to Redis");
+
     //Build router
     // PUBLIC routes (no middleware)
     let public_routes = Router::new()
@@ -49,13 +53,13 @@ async fn main() {
             get(get_project_handler).delete(delete_project_handler),
         )
         .layer(axum::middleware::from_fn_with_state(
-            pool.clone(),
+            (pool.clone(), redis_client.clone()),
             tenant_middleware,
         ));
 
     let app = public_routes
         .merge(protected_routes)
-        .with_state(pool.clone())
+        .with_state((pool.clone(), redis_client.clone()))
         .layer(CorsLayer::permissive());
 
     //Run server
