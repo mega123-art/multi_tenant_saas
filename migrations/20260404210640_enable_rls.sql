@@ -11,16 +11,16 @@ ALTER TABLE jobs FORCE ROW LEVEL SECURITY;
 
 -- Create RLS policies — only show rows matching current tenant
 CREATE POLICY tenant_isolation_users ON users
-    USING (tenant_id = current_setting('app.current_tenant')::UUID);
+    USING (tenant_id = current_setting('app.current_tenant', true)::UUID);
 
 CREATE POLICY tenant_isolation_projects ON projects
-    USING (tenant_id = current_setting('app.current_tenant')::UUID);
+    USING (tenant_id = current_setting('app.current_tenant', true)::UUID);
 
 CREATE POLICY tenant_isolation_tasks ON tasks
-    USING (tenant_id = current_setting('app.current_tenant')::UUID);
+    USING (tenant_id = current_setting('app.current_tenant', true)::UUID);
 
 CREATE POLICY tenant_isolation_jobs ON jobs
-    USING (tenant_id = current_setting('app.current_tenant')::UUID);
+    USING (tenant_id = current_setting('app.current_tenant', true)::UUID);
 
 -- Allow the app user to bypass RLS only for the tenants table itself
 -- (so we can look up tenants by slug during middleware)
