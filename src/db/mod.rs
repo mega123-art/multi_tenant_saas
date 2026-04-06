@@ -1,3 +1,4 @@
 pub mod tenants;
-pub mod users;
 pub mod utils;
+pub mod users;
+pub mod projects;
