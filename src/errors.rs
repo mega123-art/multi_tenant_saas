@@ -12,6 +12,9 @@ pub enum ApiError {
     #[error("database error")]
     DbError(#[from] sqlx::Error),
 
+    #[error("cache error")]
+    CacheError(#[from] redis::RedisError),
+
     #[error("not found")]
     NotFound,
 
@@ -37,6 +40,7 @@ impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
         let status = match &self {
             ApiError::DbError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            ApiError::CacheError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ApiError::NotFound => StatusCode::NOT_FOUND,
             ApiError::Conflict(_) => StatusCode::CONFLICT,
             ApiError::BadRequest(_) => StatusCode::BAD_REQUEST,

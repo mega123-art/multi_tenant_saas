@@ -7,6 +7,7 @@ use std::net::SocketAddr;
 use tower_http::cors::CorsLayer;
 
 mod db;
+mod cache;
 mod errors;
 mod handlers;
 mod middleware;

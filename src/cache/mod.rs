@@ -10,7 +10,7 @@ pub async fn get_cached<T: DeserializeOwned>(
     client: &redis::Client,
     key: &str,
 ) -> Result<Option<T>, ApiError> {
-    let mut conn = client.get_async_connection().await?;
+    let mut conn = client.get_multiplexed_async_connection().await?;
 
     let data: Option<String> = conn.get(key).await?;
 
@@ -32,9 +32,9 @@ pub async fn set_cache<T: Serialize>(
     client: &redis::Client,
     key: &str,
     value: &T,
-    ttl_secs: usize,
+    ttl_secs: u64,
 ) -> Result<(), ApiError> {
-    let mut conn = client.get_async_connection().await?;
+    let mut conn = client.get_multiplexed_async_connection().await?;
 
     let json = serde_json::to_string(value)
         .map_err(|_| ApiError::InternalServerError)?;
@@ -52,7 +52,7 @@ pub async fn delete_cache(
     client: &redis::Client,
     key: &str,
 ) -> Result<(), ApiError> {
-    let mut conn = client.get_async_connection().await?;
+    let mut conn = client.get_multiplexed_async_connection().await?;
 
     let _: () = conn.del(key).await?;
 
