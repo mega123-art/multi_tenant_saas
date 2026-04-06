@@ -1,22 +1,19 @@
 use axum::{
-    routing::{get, post},
     Router,
+    routing::{get, post},
 };
 use sqlx::PgPool;
 use std::net::SocketAddr;
 use tower_http::cors::CorsLayer;
 
-mod models;
-mod errors;
 mod db;
+mod errors;
 mod handlers;
 mod middleware;
+mod models;
 
-use handlers::users::{
-    create_user_handler,
-    list_users_handler,
-    get_user_handler,
-};
+use handlers::tenants::{create_tenant_handler, get_tenant_handler};
+use handlers::users::{create_user_handler, get_user_handler, list_users_handler};
 
 use middleware::tenant::tenant_middleware;
 
@@ -25,26 +22,32 @@ async fn main() {
     dotenv::dotenv().ok();
 
     //Create DB pool
-    let database_url = std::env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set");
+    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
     let pool = PgPool::connect(&database_url)
         .await
         .expect("Failed to connect to DB");
 
     //Build router
-    let app = Router::new()
-        // user routes
+    // PUBLIC routes (no middleware)
+    let public_routes = Router::new()
+        .route("/tenants", post(create_tenant_handler))
+        .route("/tenants/:slug", get(get_tenant_handler));
+
+    // PROTECTED routes (with tenant middleware)
+    let protected_routes = Router::new()
         .route("/users", post(create_user_handler).get(list_users_handler))
         .route("/users/:id", get(get_user_handler))
-        // apply tenant middleware ONLY to these routes
         .layer(axum::middleware::from_fn_with_state(
             pool.clone(),
             tenant_middleware,
-        ))
-        // shared state
-        .with_state(pool.clone())
-        .layer(CorsLayer::permissive());
+        ));
+        
+
+    let app = public_routes
+    .merge(protected_routes)
+    .with_state(pool.clone())
+    .layer(CorsLayer::permissive());
 
     //Run server
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));

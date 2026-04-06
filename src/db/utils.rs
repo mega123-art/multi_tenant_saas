@@ -5,11 +5,7 @@ use crate::errors::ApiError;
 
 use futures_util::future::BoxFuture;
 
-pub async fn with_tenant<F, T>(
-    pool: &PgPool,
-    tenant_id: Uuid,
-    f: F,
-) -> Result<T, ApiError>
+pub async fn with_tenant<F, T>(pool: &PgPool, tenant_id: Uuid, f: F) -> Result<T, ApiError>
 where
     F: for<'a> FnOnce(&'a mut Transaction<'_, Postgres>) -> BoxFuture<'a, Result<T, ApiError>>,
     T: Send,

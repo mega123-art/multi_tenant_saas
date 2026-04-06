@@ -1,12 +1,10 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use sqlx::FromRow;
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
-use serde_json::Value;
 
-
-//TENANT 
-
+//TENANT
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct Tenant {
@@ -16,7 +14,7 @@ pub struct Tenant {
     pub created_at: Option<DateTime<Utc>>,
 }
 
-//USER 
+//USER
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct User {
@@ -62,9 +60,7 @@ pub struct Task {
     pub updated_at: Option<DateTime<Utc>>,
 }
 
-
-//JOB 
-
+//JOB
 
 #[allow(dead_code)]
 #[derive(Debug, Serialize, Deserialize, FromRow)]

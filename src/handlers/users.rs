@@ -1,21 +1,19 @@
 use axum::{
-    extract::{Extension, Path, State},
     Json,
+    extract::{Extension, Path, State},
 };
 use serde::Deserialize;
 use uuid::Uuid;
 use validator::Validate;
 
 use crate::{
-    db::users::{create_user, list_users, get_user},
+    db::users::{create_user, get_user, list_users},
     errors::ApiError,
     middleware::tenant::TenantContext,
 };
 use sqlx::PgPool;
 
-
 //REQUEST STRUCTS
-
 
 #[derive(Debug, Deserialize, Validate)]
 pub struct CreateUserRequest {
@@ -26,24 +24,18 @@ pub struct CreateUserRequest {
     pub email: String,
 }
 
-
 //HANDLERS
-
 
 pub async fn create_user_handler(
     State(pool): State<PgPool>,
     Extension(ctx): Extension<TenantContext>,
     Json(payload): Json<CreateUserRequest>,
 ) -> Result<Json<crate::models::User>, ApiError> {
-    payload.validate().map_err(|e| ApiError::BadRequest(e.to_string()))?;
+    payload
+        .validate()
+        .map_err(|e| ApiError::BadRequest(e.to_string()))?;
 
-    let user = create_user(
-        &pool,
-        ctx.tenant_id,
-        payload.name,
-        payload.email,
-    )
-    .await?;
+    let user = create_user(&pool, ctx.tenant_id, payload.name, payload.email).await?;
 
     Ok(Json(user))
 }

@@ -1,18 +1,12 @@
 use sqlx::PgPool;
 
-use crate::models::Tenant;
 use crate::errors::ApiError;
+use crate::models::Tenant;
 
-
-//CREATE TENANT 
-
+//CREATE TENANT
 
 #[allow(unused)]
-pub async fn create_tenant(
-    pool: &PgPool,
-    name: String,
-    slug: String,
-) -> Result<Tenant, ApiError> {
+pub async fn create_tenant(pool: &PgPool, name: String, slug: String) -> Result<Tenant, ApiError> {
     let tenant = sqlx::query_as!(
         Tenant,
         r#"
@@ -29,14 +23,9 @@ pub async fn create_tenant(
     Ok(tenant)
 }
 
-
 // GET TENANT BY SLUG
 
-
-pub async fn get_tenant_by_slug(
-    pool: &PgPool,
-    slug: &str,
-) -> Result<Tenant, ApiError> {
+pub async fn get_tenant_by_slug(pool: &PgPool, slug: &str) -> Result<Tenant, ApiError> {
     let tenant = sqlx::query_as!(
         Tenant,
         r#"
