@@ -12,9 +12,11 @@ mod handlers;
 mod middleware;
 mod models;
 
+use handlers::projects::{
+    create_project_handler, delete_project_handler, get_project_handler, list_projects_handler,
+};
 use handlers::tenants::{create_tenant_handler, get_tenant_handler};
 use handlers::users::{create_user_handler, get_user_handler, list_users_handler};
-
 use middleware::tenant::tenant_middleware;
 
 #[tokio::main]
@@ -38,16 +40,23 @@ async fn main() {
     let protected_routes = Router::new()
         .route("/users", post(create_user_handler).get(list_users_handler))
         .route("/users/:id", get(get_user_handler))
+        .route(
+            "/projects",
+            post(create_project_handler).get(list_projects_handler),
+        )
+        .route(
+            "/projects/:id",
+            get(get_project_handler).delete(delete_project_handler),
+        )
         .layer(axum::middleware::from_fn_with_state(
             pool.clone(),
             tenant_middleware,
         ));
-        
 
     let app = public_routes
-    .merge(protected_routes)
-    .with_state(pool.clone())
-    .layer(CorsLayer::permissive());
+        .merge(protected_routes)
+        .with_state(pool.clone())
+        .layer(CorsLayer::permissive());
 
     //Run server
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
