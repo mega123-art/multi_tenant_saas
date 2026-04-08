@@ -6,17 +6,20 @@ use sqlx::PgPool;
 use std::net::SocketAddr;
 use tower_http::cors::CorsLayer;
 
-mod db;
 mod cache;
+mod db;
 mod errors;
 mod handlers;
 mod middleware;
 mod models;
 
+use handlers::jobs::{create_job_handler, list_jobs_handler};
 use handlers::projects::{
     create_project_handler, delete_project_handler, get_project_handler, list_projects_handler,
 };
-use handlers::tasks::{create_task_handler, list_tasks_handler, get_subtasks_handler, update_task_handler};
+use handlers::tasks::{
+    create_task_handler, get_subtasks_handler, list_tasks_handler, update_task_handler,
+};
 use handlers::tenants::{create_tenant_handler, get_tenant_handler};
 use handlers::users::{create_user_handler, get_user_handler, list_users_handler};
 use middleware::tenant::tenant_middleware;
@@ -57,6 +60,7 @@ async fn main() {
         .route("/tasks", post(create_task_handler).get(list_tasks_handler))
         .route("/tasks/:id", axum::routing::put(update_task_handler))
         .route("/tasks/:id/subtasks", get(get_subtasks_handler))
+        .route("/jobs", post(create_job_handler).get(list_jobs_handler))
         .layer(axum::middleware::from_fn_with_state(
             (pool.clone(), redis_client.clone()),
             tenant_middleware,

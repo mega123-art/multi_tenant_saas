@@ -3,8 +3,7 @@ use serde::{Serialize, de::DeserializeOwned};
 
 use crate::errors::ApiError;
 
-
-//GET FROM CACHE 
+//GET FROM CACHE
 
 pub async fn get_cached<T: DeserializeOwned>(
     client: &redis::Client,
@@ -16,17 +15,14 @@ pub async fn get_cached<T: DeserializeOwned>(
 
     match data {
         Some(json) => {
-            let value = serde_json::from_str(&json)
-                .map_err(|_| ApiError::InternalServerError)?;
+            let value = serde_json::from_str(&json).map_err(|_| ApiError::InternalServerError)?;
             Ok(Some(value))
         }
         None => Ok(None),
     }
 }
 
-
 //SET CACHE
-
 
 pub async fn set_cache<T: Serialize>(
     client: &redis::Client,
@@ -36,22 +32,16 @@ pub async fn set_cache<T: Serialize>(
 ) -> Result<(), ApiError> {
     let mut conn = client.get_multiplexed_async_connection().await?;
 
-    let json = serde_json::to_string(value)
-        .map_err(|_| ApiError::InternalServerError)?;
+    let json = serde_json::to_string(value).map_err(|_| ApiError::InternalServerError)?;
 
     let _: () = conn.set_ex(key, json, ttl_secs).await?;
 
     Ok(())
 }
 
-
 //DELETE CACHE
 
-
-pub async fn delete_cache(
-    client: &redis::Client,
-    key: &str,
-) -> Result<(), ApiError> {
+pub async fn delete_cache(client: &redis::Client, key: &str) -> Result<(), ApiError> {
     let mut conn = client.get_multiplexed_async_connection().await?;
 
     let _: () = conn.del(key).await?;

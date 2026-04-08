@@ -9,10 +9,10 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::{
+    cache::{delete_cache, get_cached, set_cache},
     db::projects::{create_project, delete_project, get_project, list_projects},
     errors::ApiError,
     middleware::tenant::TenantContext,
-    cache::{get_cached, set_cache, delete_cache},
 };
 use redis::Client as RedisClient;
 //REQUEST

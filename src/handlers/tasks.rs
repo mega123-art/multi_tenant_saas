@@ -1,23 +1,21 @@
 use axum::{
-    extract::{Extension, Query, State,Path},
     Json,
+    extract::{Extension, Path, Query, State},
 };
 use serde::Deserialize;
-use validator::Validate;
-use uuid::Uuid;
-use sqlx::PgPool;
 use serde_json::Value;
+use sqlx::PgPool;
+use uuid::Uuid;
+use validator::Validate;
 
 use crate::{
-    db::tasks::{create_task, list_tasks, get_subtask_tree, update_task},
+    db::tasks::{create_task, get_subtask_tree, list_tasks, update_task},
     errors::ApiError,
     middleware::tenant::TenantContext,
-    models::TaskTreeRow
+    models::TaskTreeRow,
 };
 
-
 //REQUEST
-
 
 #[derive(Debug, Deserialize, Validate)]
 pub struct CreateTaskRequest {
@@ -51,15 +49,16 @@ pub struct UpdateTaskRequest {
     pub version: i32,
 }
 
-//HANDLERS 
-
+//HANDLERS
 
 pub async fn create_task_handler(
     State((pool, _redis)): State<(PgPool, redis::Client)>,
     Extension(ctx): Extension<TenantContext>,
     Json(payload): Json<CreateTaskRequest>,
 ) -> Result<Json<crate::models::Task>, ApiError> {
-    payload.validate().map_err(|e| ApiError::BadRequest(e.to_string()))?;
+    payload
+        .validate()
+        .map_err(|e| ApiError::BadRequest(e.to_string()))?;
 
     let task = create_task(
         &pool,

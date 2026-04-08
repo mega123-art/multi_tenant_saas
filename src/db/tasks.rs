@@ -1,15 +1,13 @@
+use futures_util::FutureExt;
+use serde_json::Value;
 use sqlx::PgPool;
 use uuid::Uuid;
-use serde_json::Value;
-use futures_util::FutureExt;
 
-use crate::models::{Task, TaskTreeRow};
-use crate::errors::ApiError;
 use crate::db::utils::with_tenant;
+use crate::errors::ApiError;
+use crate::models::{Task, TaskTreeRow};
 
-
-//CREATE TASK 
-
+//CREATE TASK
 
 pub async fn create_task(
     pool: &PgPool,
@@ -20,10 +18,11 @@ pub async fn create_task(
     description: Option<String>,
     metadata: Value,
 ) -> Result<Task, ApiError> {
-    let task = with_tenant(pool, tenant_id, |tx| async move {
-        let task = sqlx::query_as!(
-            Task,
-            r#"
+    let task = with_tenant(pool, tenant_id, |tx| {
+        async move {
+            let task = sqlx::query_as!(
+                Task,
+                r#"
             INSERT INTO tasks (
                 tenant_id, project_id, parent_task_id,
                 title, description, metadata
@@ -34,26 +33,26 @@ pub async fn create_task(
                 title, description, status, priority,
                 metadata, version, created_at, updated_at
             "#,
-            tenant_id,
-            project_id,
-            parent_task_id,
-            title,
-            description,
-            metadata
-        )
-        .fetch_one(&mut **tx)
-        .await?;
+                tenant_id,
+                project_id,
+                parent_task_id,
+                title,
+                description,
+                metadata
+            )
+            .fetch_one(&mut **tx)
+            .await?;
 
-        Ok(task)
-    }.boxed())
+            Ok(task)
+        }
+        .boxed()
+    })
     .await?;
 
     Ok(task)
 }
 
-
 // LIST TASKS (basic)
-
 
 pub async fn list_tasks(
     pool: &PgPool,
@@ -73,7 +72,7 @@ pub async fn list_tasks(
                     metadata, version, created_at, updated_at
                 FROM tasks
                 WHERE 1=1
-                "#
+                "#,
             );
 
             let mut i = 1;
@@ -131,7 +130,6 @@ pub async fn list_tasks(
     Ok(tasks)
 }
 
-
 // GET SUBTASK
 
 pub async fn get_subtask_tree(
@@ -139,10 +137,11 @@ pub async fn get_subtask_tree(
     tenant_id: Uuid,
     task_id: Uuid,
 ) -> Result<Vec<TaskTreeRow>, ApiError> {
-    let tasks = with_tenant(pool, tenant_id, |tx| async move {
-        let rows = sqlx::query_as!(
-            TaskTreeRow,
-            r#"
+    let tasks = with_tenant(pool, tenant_id, |tx| {
+        async move {
+            let rows = sqlx::query_as!(
+                TaskTreeRow,
+                r#"
             WITH RECURSIVE task_tree AS (
                 SELECT
                     id, title, status, priority,
@@ -171,13 +170,15 @@ pub async fn get_subtask_tree(
             FROM task_tree
             ORDER BY depth, title
             "#,
-            task_id
-        )
-        .fetch_all(&mut **tx)
-        .await?;
+                task_id
+            )
+            .fetch_all(&mut **tx)
+            .await?;
 
-        Ok(rows)
-    }.boxed())
+            Ok(rows)
+        }
+        .boxed()
+    })
     .await?;
 
     Ok(tasks)
@@ -196,10 +197,11 @@ pub async fn update_task(
     metadata: Option<serde_json::Value>,
     version: i32,
 ) -> Result<Task, ApiError> {
-    let task = with_tenant(pool, tenant_id, |tx| async move {
-        let res = sqlx::query_as!(
-            Task,
-            r#"
+    let task = with_tenant(pool, tenant_id, |tx| {
+        async move {
+            let res = sqlx::query_as!(
+                Task,
+                r#"
             UPDATE tasks
             SET
                 title = COALESCE($1, title),
@@ -214,24 +216,26 @@ pub async fn update_task(
                 title, description, status, priority,
                 metadata, version, created_at, updated_at
             "#,
-            title,
-            description,
-            status,
-            priority,
-            metadata,
-            task_id,
-            version
-        )
-        .fetch_optional(&mut **tx)
-        .await?;
+                title,
+                description,
+                status,
+                priority,
+                metadata,
+                task_id,
+                version
+            )
+            .fetch_optional(&mut **tx)
+            .await?;
 
-        match res {
-            Some(task) => Ok(task),
-            None => Err(ApiError::Conflict(
-                "task was modified by another user".into()
-            )),
+            match res {
+                Some(task) => Ok(task),
+                None => Err(ApiError::Conflict(
+                    "task was modified by another user".into(),
+                )),
+            }
         }
-    }.boxed())
+        .boxed()
+    })
     .await?;
 
     Ok(task)
