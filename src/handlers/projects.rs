@@ -1,6 +1,7 @@
 use axum::{
     Json,
     extract::{Extension, Path, State},
+    http::StatusCode,
 };
 use serde::Deserialize;
 use sqlx::PgPool;
@@ -81,12 +82,12 @@ pub async fn delete_project_handler(
     State((pool, redis)): State<(PgPool, RedisClient)>,
     Extension(ctx): Extension<TenantContext>,
     Path(id): Path<Uuid>,
-) -> Result<(), ApiError> {
+) -> Result<StatusCode, ApiError> {
     delete_project(&pool, ctx.tenant_id, id).await?;
 
     // cache invalidation
     let key = format!("project_list:{}", ctx.tenant_id);
     delete_cache(&redis, &key).await?;
 
-    Ok(())
+    Ok(StatusCode::NO_CONTENT)
 }
