@@ -55,7 +55,7 @@ async fn main() {
             get(get_project_handler).delete(delete_project_handler),
         )
         .route("/tasks", post(create_task_handler).get(list_tasks_handler))
-        .route("/tasks/:id", post(update_task_handler))
+        .route("/tasks/:id", axum::routing::put(update_task_handler))
         .route("/tasks/:id/subtasks", get(get_subtasks_handler))
         .layer(axum::middleware::from_fn_with_state(
             (pool.clone(), redis_client.clone()),
