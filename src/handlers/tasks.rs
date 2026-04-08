@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Extension, Query, State},
+    extract::{Extension, Query, State,Path},
     Json,
 };
 use serde::Deserialize;
@@ -9,9 +9,10 @@ use sqlx::PgPool;
 use serde_json::Value;
 
 use crate::{
-    db::tasks::{create_task, list_tasks},
+    db::tasks::{create_task, list_tasks, get_subtask_tree},
     errors::ApiError,
     middleware::tenant::TenantContext,
+    models::TaskTreeRow
 };
 
 
@@ -79,6 +80,15 @@ pub async fn list_tasks_handler(
         query.label,
     )
     .await?;
+
+    Ok(Json(tasks))
+}
+pub async fn get_subtasks_handler(
+    State((pool, _)): State<(PgPool, redis::Client)>,
+    Extension(ctx): Extension<TenantContext>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<Vec<TaskTreeRow>>, ApiError> {
+    let tasks = get_subtask_tree(&pool, ctx.tenant_id, id).await?;
 
     Ok(Json(tasks))
 }

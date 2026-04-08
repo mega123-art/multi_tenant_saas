@@ -3,7 +3,7 @@ use uuid::Uuid;
 use serde_json::Value;
 use futures_util::FutureExt;
 
-use crate::models::Task;
+use crate::models::{Task, TaskTreeRow};
 use crate::errors::ApiError;
 use crate::db::utils::with_tenant;
 
@@ -99,7 +99,6 @@ pub async fn list_tasks(
 
             if label.is_some() {
                 base.push_str(&format!(" AND metadata @> ${}", i));
-                i += 1;
             }
 
             base.push_str(" ORDER BY created_at DESC");
@@ -127,6 +126,58 @@ pub async fn list_tasks(
         }
         .boxed()
     })
+    .await?;
+
+    Ok(tasks)
+}
+
+
+// GET SUBTASK
+
+pub async fn get_subtask_tree(
+    pool: &PgPool,
+    tenant_id: Uuid,
+    task_id: Uuid,
+) -> Result<Vec<TaskTreeRow>, ApiError> {
+    let tasks = with_tenant(pool, tenant_id, |tx| async move {
+        let rows = sqlx::query_as!(
+            TaskTreeRow,
+            r#"
+            WITH RECURSIVE task_tree AS (
+                SELECT
+                    id, title, status, priority,
+                    parent_task_id,
+                    0 as depth
+                FROM tasks
+                WHERE id = $1
+
+                UNION ALL
+
+                SELECT
+                    t.id, t.title, t.status, t.priority,
+                    t.parent_task_id,
+                    tt.depth + 1
+                FROM tasks t
+                INNER JOIN task_tree tt
+                ON t.parent_task_id = tt.id
+            )
+            SELECT 
+                id AS "id!", 
+                title AS "title!", 
+                status AS "status!", 
+                priority AS "priority!", 
+                parent_task_id, 
+                depth AS "depth!" 
+            FROM task_tree
+            ORDER BY depth, title
+            "#,
+            task_id
+        )
+        .fetch_all(&mut **tx)
+        .await?;
+
+        Ok(rows)
+    }.boxed())
     .await?;
 
     Ok(tasks)

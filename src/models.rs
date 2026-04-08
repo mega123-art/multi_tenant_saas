@@ -76,3 +76,14 @@ pub struct Job {
     pub created_at: Option<DateTime<Utc>>,
     pub updated_at: Option<DateTime<Utc>>,
 }
+
+// For recursive CTE results
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+pub struct TaskTreeRow {
+    pub id: uuid::Uuid,
+    pub title: String,
+    pub status: String,
+    pub priority: String,
+    pub parent_task_id: Option<uuid::Uuid>,
+    pub depth: i32,
+}
