@@ -9,7 +9,7 @@ use sqlx::PgPool;
 use serde_json::Value;
 
 use crate::{
-    db::tasks::{create_task, list_tasks, get_subtask_tree},
+    db::tasks::{create_task, list_tasks, get_subtask_tree, update_task},
     errors::ApiError,
     middleware::tenant::TenantContext,
     models::TaskTreeRow
@@ -41,6 +41,15 @@ pub struct TaskQuery {
     pub label: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct UpdateTaskRequest {
+    pub title: Option<String>,
+    pub description: Option<String>,
+    pub status: Option<String>,
+    pub priority: Option<String>,
+    pub metadata: Option<Value>,
+    pub version: i32,
+}
 
 //HANDLERS 
 
@@ -91,4 +100,26 @@ pub async fn get_subtasks_handler(
     let tasks = get_subtask_tree(&pool, ctx.tenant_id, id).await?;
 
     Ok(Json(tasks))
+}
+
+pub async fn update_task_handler(
+    State((pool, _)): State<(PgPool, redis::Client)>,
+    Extension(ctx): Extension<TenantContext>,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<UpdateTaskRequest>,
+) -> Result<Json<crate::models::Task>, ApiError> {
+    let task = update_task(
+        &pool,
+        ctx.tenant_id,
+        id,
+        payload.title,
+        payload.description,
+        payload.status,
+        payload.priority,
+        payload.metadata,
+        payload.version,
+    )
+    .await?;
+
+    Ok(Json(task))
 }

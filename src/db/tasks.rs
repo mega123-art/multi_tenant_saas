@@ -182,3 +182,57 @@ pub async fn get_subtask_tree(
 
     Ok(tasks)
 }
+
+//UPDATE TASK
+
+pub async fn update_task(
+    pool: &PgPool,
+    tenant_id: Uuid,
+    task_id: Uuid,
+    title: Option<String>,
+    description: Option<String>,
+    status: Option<String>,
+    priority: Option<String>,
+    metadata: Option<serde_json::Value>,
+    version: i32,
+) -> Result<Task, ApiError> {
+    let task = with_tenant(pool, tenant_id, |tx| async move {
+        let res = sqlx::query_as!(
+            Task,
+            r#"
+            UPDATE tasks
+            SET
+                title = COALESCE($1, title),
+                description = COALESCE($2, description),
+                status = COALESCE($3, status),
+                priority = COALESCE($4, priority),
+                metadata = COALESCE($5, metadata),
+                version = version + 1
+            WHERE id = $6 AND version = $7
+            RETURNING
+                id, tenant_id, project_id, parent_task_id,
+                title, description, status, priority,
+                metadata, version, created_at, updated_at
+            "#,
+            title,
+            description,
+            status,
+            priority,
+            metadata,
+            task_id,
+            version
+        )
+        .fetch_optional(&mut **tx)
+        .await?;
+
+        match res {
+            Some(task) => Ok(task),
+            None => Err(ApiError::Conflict(
+                "task was modified by another user".into()
+            )),
+        }
+    }.boxed())
+    .await?;
+
+    Ok(task)
+}
