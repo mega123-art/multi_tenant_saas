@@ -12,7 +12,8 @@ mod errors;
 mod handlers;
 mod middleware;
 mod models;
-
+mod workers;
+use workers::job_worker::job_worker;
 use handlers::jobs::{create_job_handler, list_jobs_handler};
 use handlers::projects::{
     create_project_handler, delete_project_handler, get_project_handler, list_projects_handler,
@@ -39,6 +40,9 @@ async fn main() {
     let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL must be set");
     let redis_client = redis::Client::open(redis_url).expect("Failed to connect to Redis");
 
+    //Start background worker
+    tokio::spawn(job_worker(pool.clone()));
+
     //Build router
     // PUBLIC routes (no middleware)
     let public_routes = Router::new()
@@ -60,7 +64,8 @@ async fn main() {
         .route("/tasks", post(create_task_handler).get(list_tasks_handler))
         .route("/tasks/:id", axum::routing::put(update_task_handler))
         .route("/tasks/:id/subtasks", get(get_subtasks_handler))
-        .route("/jobs", post(create_job_handler).get(list_jobs_handler))
+        .route("/jobs", post(create_job_handler))
+        .route("/jobs/pending", get(list_jobs_handler))
         .layer(axum::middleware::from_fn_with_state(
             (pool.clone(), redis_client.clone()),
             tenant_middleware,
