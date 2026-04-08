@@ -35,6 +35,9 @@ pub struct CreateTaskRequest {
 #[derive(Debug, Deserialize)]
 pub struct TaskQuery {
     pub project_id: Option<Uuid>,
+    pub search: Option<String>,
+    pub status: Option<String>,
+    pub label: Option<String>,
 }
 
 
@@ -71,6 +74,9 @@ pub async fn list_tasks_handler(
         &pool,
         ctx.tenant_id,
         query.project_id,
+        query.search,
+        query.status,
+        query.label,
     )
     .await?;
 

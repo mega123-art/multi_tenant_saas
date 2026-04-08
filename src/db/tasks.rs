@@ -59,42 +59,74 @@ pub async fn list_tasks(
     pool: &PgPool,
     tenant_id: Uuid,
     project_id: Option<Uuid>,
+    search: Option<String>,
+    status: Option<String>,
+    label: Option<String>,
 ) -> Result<Vec<Task>, ApiError> {
-    let tasks = with_tenant(pool, tenant_id, |tx| async move {
-        let tasks = if let Some(pid) = project_id {
-            sqlx::query_as!(
-                Task,
+    let tasks = with_tenant(pool, tenant_id, |tx| {
+        async move {
+            let mut base = String::from(
                 r#"
                 SELECT
                     id, tenant_id, project_id, parent_task_id,
                     title, description, status, priority,
                     metadata, version, created_at, updated_at
                 FROM tasks
-                WHERE project_id = $1
-                ORDER BY created_at DESC
-                "#,
-                pid
-            )
-            .fetch_all(&mut **tx)
-            .await?
-        } else {
-            sqlx::query_as!(
-                Task,
-                r#"
-                SELECT
-                    id, tenant_id, project_id, parent_task_id,
-                    title, description, status, priority,
-                    metadata, version, created_at, updated_at
-                FROM tasks
-                ORDER BY created_at DESC
+                WHERE 1=1
                 "#
-            )
-            .fetch_all(&mut **tx)
-            .await?
-        };
+            );
 
-        Ok(tasks)
-    }.boxed())
+            let mut i = 1;
+
+            // Step 1: Build SQL string dynamically
+            if project_id.is_some() {
+                base.push_str(&format!(" AND project_id = ${}", i));
+                i += 1;
+            }
+
+            if search.is_some() {
+                base.push_str(&format!(
+                    " AND search_vector @@ plainto_tsquery('english', ${})",
+                    i
+                ));
+                i += 1;
+            }
+
+            if status.is_some() {
+                base.push_str(&format!(" AND status = ${}", i));
+                i += 1;
+            }
+
+            if label.is_some() {
+                base.push_str(&format!(" AND metadata @> ${}", i));
+                i += 1;
+            }
+
+            base.push_str(" ORDER BY created_at DESC");
+
+            // Step 2: Build final query and bind ALL parameters
+            let mut query = sqlx::query_as::<_, Task>(&base);
+
+            if let Some(pid) = project_id {
+                query = query.bind(pid);
+            }
+            if let Some(s) = search {
+                query = query.bind(s);
+            }
+            if let Some(st) = status {
+                query = query.bind(st);
+            }
+            if let Some(l) = label {
+                let json = serde_json::json!({ "labels": [l] });
+                query = query.bind(json);
+            }
+
+            let tasks = query.fetch_all(&mut **tx).await?;
+
+            Ok(tasks)
+        }
+        .boxed()
+    })
     .await?;
 
     Ok(tasks)
